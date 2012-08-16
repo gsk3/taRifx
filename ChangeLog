@@ -1,0 +1,27 @@
+Change log version 1.0 to 1.0.1
+
+- Updated documentation on shift()
+- Made shift() a generic with data.frame and vector methods
+- Fixed require'd package loading
+- Added ,drop=FALSE option to sort.data.frame
+
+Change log version 1.0.1 to 1.0.2
+
+- Added destring()
+- Depricated roundnear()
+
+Change log version 1.0.2 to 1.0.3
+
+- Added reshapeasy(), a wrapper to make base R's reshape syntax sane
+- Added japply() convenience function to only sapply certain columns
+- Added stack.list(), a stack method for lists of data.frames
+- Added cleanTurked(), a function to clean Amazon Mechanical Turk items
+- Added an autoplot (ggplot2) method to plot microbenchmark results
+
+Change log version 1.0.3 to 1.0.4
+
+- Tweaked display settings in autoplot.microbenchmark
+- Fixed bug in as.data.frame.by
+- Split geographical functions into separate package: taRifx.geo
+- Added write.sanitized.csv(), a function to write CSV files for persnickity or picky parsers
+- Added readdir(), to read all data files in a directory
