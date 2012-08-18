@@ -25,3 +25,5 @@ Change log version 1.0.3 to 1.0.4
 - Split geographical functions into separate package: taRifx.geo
 - Added write.sanitized.csv(), a function to write CSV files for persnickity or picky parsers
 - Added readdir(), to read all data files in a directory
+
+Change log version 1.0.4 to 1.0.5
