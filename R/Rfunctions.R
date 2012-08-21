@@ -1205,9 +1205,13 @@ japply <- function(df, sel, FUN=function(x) x, ...) {
 #'@param x A list of rbindable objects (typically data.frames)
 #'@param label If false, drops labels
 #'@param \dots Ignored
-#'@return A ggplot2 plot
+#'@return Typically a data.frame
 #'@export stack.list
 #'@method stack list
+#'@examples
+#'dat <- replicate(10, data.frame(x=runif(2),y=rnorm(2)), simplify=FALSE)
+#'str(dat)
+#'stack(dat)
 stack.list <- function( x, label=FALSE, ... ) {
   ret <- x[[1]]
   if(label) { ret$from <- 1 }
