@@ -1347,3 +1347,31 @@ readdir <- function(path, exclude="", filename.as.variable="filename", stack=FAL
   if(stack)  ret <- stack(ret)
   ret
 }
+
+#' Recursively delete entries containing `what` before entry pointed to by `which`
+#' @param x data vector
+#' @param which Vector of indices to check preceding element for `what`
+#' @param what What to check for and delete if found in preceding element
+#' @return A vector of the same type as x with all the `what`'s removed if they were at the `which`-(1,2,3...) locations
+#' @export munch
+#' @examples
+#' x <- c("a","","b","","","","","c","d","","","","e","")
+#' munch( x, c(3,8,9,13) )
+munch <- function(x,which,what="") {
+  cat("Which:",paste(which,collapse="~"),"\n")
+  if(length(which)>1) { # Dispatch single-which handlers
+    which <- sort(which) # Have to dispatch them in ascending order otherwise our offset logic fails
+    for(w in seq(length(which)) ) {
+      x <- munch(x,which[w],what)
+      which <- which - attr(x,"offset")
+    }
+    attr(x,"offset") <- NULL
+  } else if( x[which-1]==what ) { # Single-which handler
+    initialLength <- length(x)
+    x <- x[-(which-1)]
+    x <- munch(x,which-1)
+    attr(x,"offset") <- initialLength - length(x)
+  }
+  return(x)
+}
+
