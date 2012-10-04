@@ -27,3 +27,5 @@ Change log version 1.0.3 to 1.0.4
 - Added readdir(), to read all data files in a directory
 
 Change log version 1.0.4 to 1.0.5
+
+- Changed default on destring() so it handles negative values
