@@ -24,3 +24,4 @@ Depends:
 Collate:
     'Contributed.R'
     'Rfunctions.R'
+    'patteRns.R'

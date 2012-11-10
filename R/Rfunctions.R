@@ -1380,3 +1380,29 @@ munchOne <- function(x,wch,what="") {
   return(x)
 }
 
+#' Method to merge two lists
+#' Matches names of each list element and combines any sub-elements
+#' @alias merge.list
+#' @param x First list
+#' @param y Second list
+#' @param \dots Other arguments
+#' @export merge.list
+#' @method merge.list
+#' @return A list
+#' @examples
+#'x <- list( A=list(p=runif(5)), B=list(q=runif(5)) )
+#'y <- list( A=list(r=runif(5)), C=list(s=runif(5)) )
+#'merge.list(x,y)
+merge.list <- function( x, y, ... ) {
+  res <- x
+  for( nm in names(y) ) {
+    if(is.null(x[[nm]])) {
+      res[[nm]] <- y[[nm]]
+    } else {
+      for(yname in names(y[[nm]])) {
+        res[[nm]][[yname]] <- y[[nm]][[yname]]
+      }
+    }
+  }
+  res
+}

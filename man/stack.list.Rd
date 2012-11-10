@@ -13,10 +13,15 @@
   \item{\dots}{Ignored}
 }
 \value{
-  A ggplot2 plot
+  Typically a data.frame
 }
 \description{
   Method of stack for lists of data.frames (e.g. from
   replicate() )
+}
+\examples{
+dat <- replicate(10, data.frame(x=runif(2),y=rnorm(2)), simplify=FALSE)
+str(dat)
+stack(dat)
 }
 

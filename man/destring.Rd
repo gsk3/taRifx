@@ -2,7 +2,7 @@
 \alias{destring}
 \title{Convert character vector to numeric, ignoring irrelevant characters.}
 \usage{
-  destring(x, keep = "0-9.")
+  destring(x, keep = "0-9.-")
 }
 \arguments{
   \item{x}{A vector to be operated on}
