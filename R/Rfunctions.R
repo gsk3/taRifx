@@ -1382,12 +1382,12 @@ munchOne <- function(x,wch,what="") {
 
 #' Method to merge two lists
 #' Matches names of each list element and combines any sub-elements
-#' @alias merge.list
 #' @param x First list
 #' @param y Second list
 #' @param \dots Other arguments
 #' @export merge.list
-#' @method merge.list
+#' @method merge list
+#' @S3method merge list
 #' @return A list
 #' @examples
 #'x <- list( A=list(p=runif(5)), B=list(q=runif(5)) )

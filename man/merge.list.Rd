@@ -3,7 +3,7 @@
 \title{Method to merge two lists
 Matches names of each list element and combines any sub-elements}
 \usage{
-  \method{merge.list}{} (x, y, ...)
+  \method{merge}{list} (x, y, ...)
 }
 \arguments{
   \item{x}{First list}
