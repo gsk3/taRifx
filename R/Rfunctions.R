@@ -1198,6 +1198,25 @@ japply <- function(df, sel, FUN=function(x) x, ...) {
   df
 }
 
+#' Iteratively (recursively) apply a function to its own output
+#' @param X a vector of first arguments to be passed in
+#' @param FUN a function taking a changing (x) and an initial argument (init)
+#' @param init an argument to be "worked on" by FUN with parameters x[1], x[2], etc.
+#' @return the final value, of the same type as init
+#' @example
+#' vec <- "xy12"
+#' mylist <- list( c("x","a"), c("y","b"), c("a","f") )
+#' iapply( mylist , FUN=function(repvec,x) {
+#'   gsub(repvec[1],repvec[2],x)
+#' }, init=vec )
+iapply <- function(X, FUN, init, ...) {
+  res <- init
+  for(x in X) {
+    res <- FUN(x, res, ...)
+  }
+  res
+}
+
 #'Stack lists of data.frames
 #'
 #'Method of stack for lists of data.frames (e.g. from replicate() )
