@@ -1217,10 +1217,12 @@ iapply <- function(X, FUN, init, ...) {
   res
 }
 
-#'Stack lists of data.frames
+#'Stack lists into data.frames
 #'
 #'Method of stack for lists of data.frames (e.g. from replicate() )
+#'Takes two types of data: 
 #'
+#'@description Takes two types of data: (1) a list of data.frames, (2) a list of vectors, which it interprets as rows of a data.frame
 #'@param x A list of rbindable objects (typically data.frames)
 #'@param label If false, drops labels
 #'@param \dots Ignored
@@ -1424,4 +1426,20 @@ merge.list <- function( x, y, ... ) {
     }
   }
   res
+}
+
+#' Function to prettify the output of another function using a `var.labels` attribute
+#' This is particularly useful in combination with read.dta et al.
+#' @param dat A data.frame with attr `var.labels` giving descriptions of variables
+#' @param expr An expression to evaluate with pretty var.labels
+#' @return The result of the expression, with variable names replaced with their labels
+#' @examples
+#' testDF <- data.frame( a=seq(10),b=runif(10),c=rnorm(10) )
+#' attr(testDF,"var.labels") <- c("Identifier","Important Data","Lies, Damn Lies, Statistics")
+#' prettify( testDF, quote(str(dat)) )
+prettify <- function( dat, expr ) {
+  labels <- attr(dat,"var.labels")
+  for(i in seq(ncol(dat))) colnames(dat)[i] <- labels[i]
+  attr(dat,"var.labels") <- NULL
+  eval( expr )
 }
