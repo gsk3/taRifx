@@ -1060,6 +1060,43 @@ xtable.summary.lme <- function (x, caption = NULL, label = NULL, align = NULL, d
 	return(x)
 }
 
+#'Add in methods to handle CrossTable objects in xtable
+#'
+#'@aliases xtable.CrossTable
+#'@param x Model object
+#'@param caption Caption for table
+#'@param label See ?xtable
+#'@param align See ?xtable
+#'@param digits See ?xtable
+#'@param display See ?xtable
+#'@param \dots Arguments to pass to xtable
+#'@return xtable object
+#'@export xtable.CrossTable
+#'@seealso \code{\link[xtable]{xtable}}
+xtable.CrossTable <- function (
+  x, 
+  caption = NULL, label = NULL, align = NULL, digits = NULL, display = NULL, 
+  
+  ...) {
+  require(xtable)
+  # Grab our data
+  x <- data.frame(x$tTable[,-3], check.names = FALSE)
+  # Update beta names if specified
+  if(!is.null(beta.names)) {
+    if(length(beta.names) != nrow(x))	stop(paste("beta.names must have",nrow(x),"elements."))
+    rownames(x) <- beta.names
+  }
+  # Set attributes and return for xtable to deal with
+  class(x) <- c("xtable", "CrossTable")
+  caption(x) <- caption
+  label(x) <- label
+  align(x) <- switch(1 + is.null(align), align, c("r", "r", "r", "r", "r"))
+  digits(x) <- switch(1 + is.null(digits), digits, c(0, 4, 4, 2, 4))
+  display(x) <- switch(1 + is.null(display), display, c("s", "f", "f", "f", "f"))
+  return(x)
+}
+
+
 
 #'Returns number of distinct observations in each column of a data frame or in
 #'a vector
@@ -1261,6 +1298,7 @@ stack.list <- function( x, label=FALSE, ... ) {
 #'logical vector corresponding to whether to drop a row (TRUE) or not (FALSE).
 #'@param post.process A user-defined function run on the data.frame after it is
 #'cleaned
+#'@seealso adjudicateTurked
 #'@return A data.frame
 #'@export cleanTurked
 cleanTurked <- function( dat, drop.duplicates=TRUE , post.process=identity ) {
@@ -1289,6 +1327,20 @@ cleanTurked <- function( dat, drop.duplicates=TRUE , post.process=identity ) {
   colnames(ret) <- sub( "(Input|Answer)\\.", "", colnames(ret), perl=TRUE )
   ret <- post.process(ret)
   ret
+}
+
+#' Function to manually deduplicate Turked entries which couldn't be done automatically
+#' @param dat The data.frame from cleanTurked()
+#' @param id Character vector of the column name that uniquely identifies each input
+adjudicateTurked <- function( dat, id ) {
+  for( l in unique(dat[[id]]) ) {
+    wch <-  dat[[id]] == l
+    if( sum( wch != 0 ) ) {
+      wchColsNeq <- sapply( dat[wch,], function(x) length(unique(x))>1 )
+      cat("For id",l,"the following columns need to be resolved:\n")
+      print(dat[wch,wchColsNeq,drop=FALSE])
+    }
+  }
 }
 
 #' Outputs a sanitized CSV file for fussy input systems e.g. ArcGIS and Mechanical Turk
@@ -1442,4 +1494,136 @@ prettify <- function( dat, expr ) {
   for(i in seq(ncol(dat))) colnames(dat)[i] <- labels[i]
   attr(dat,"var.labels") <- NULL
   eval( expr )
+}
+
+#' Convert all factors to character
+#' @param data.frame
+#' @return data.frame
+unfactor.data.frame <- function(x) {
+  japply( x, sapply(x,is.factor), as.character )
+}
+
+#' Figure out how many "sides" a formula has
+#' @aliases sides sides.default sides.formula
+#' @param x The object to calculate the sidedness of
+#' @param \dots Other items to pass along
+#' @return An integer of the number of sides
+#' @export sides sides.default sides.formula
+#' @rdname sides
+#' @examples
+#' test <- list( ~ a + b, a ~ b + c, b + c ~ a, ~ a ~ b, a ~ b ~ c )
+#' sapply(test,sides)
+sides <- function(x,...) {
+  UseMethod("sides",x)
+}
+#' @method sides default
+#' @S3method sides default
+#' @rdname sides
+sides.default <- function(x,...) {
+  stop("Only sidedness for formulas is supported currently")
+}
+#' @method sides formula
+#' @S3method sides formula
+#' @rdname sides
+sides.formula <- function(x,...) {
+  isOneSided <- function(x) attr( terms(x) , "response" ) == 0
+  two <- function(x) x[[2]]
+  # Recursively navigate the formula tree, keeping track of how many times it's been done
+  sds <- function(f,cnt=0) {
+    if(class(two(f))=="call") sds(two(f),cnt=cnt+1) else return(cnt)
+  }
+}
+
+
+#' Table function which lists NA entries by default
+#' This is a simple wrapper to change defaults from the base R table()
+#' @param \dots one or more objects which can be interpreted as factors (including character strings), or a list (or data frame) whose components can be so interpreted. (For as.table and as.data.frame, arguments passed to specific methods.)
+#' @param exclude levels to remove for all factors in .... If set to NULL, it implies useNA = "always". See ‘Details’ for its interpretation for non-factor arguments.
+#' @param useNA whether to include NA values in the table. See ‘Details’.
+#' @param dnn the names to be given to the dimensions in the result (the dimnames names).
+#' @param deparse.level controls how the default dnn is constructed. See ‘Details’.
+#' @return tab() returns a contingency table, an object of class "table", an array of integer values
+#' @seealso table
+tab <- function( ..., exclude = NULL, useNA = c("no", "ifany", "always"), dnn = list.names(...), deparse.level = 1 ) {
+  table( ..., exclude=exclude, useNA=useNA, dnn=dnn, deparse.level=deparse.level )
+}
+
+
+#' Write a table via RSQLite with factors stored in another table
+#' Handles data.tables efficiently for large datasets
+#' @param conn The connection object (created with e.g. dbConnect)
+#' @param name The name of the table to write
+#' @param value The data.frame to write to the database
+#' @param factorName The base name of the tables to store the factor labels in in the SQLite database (e.g. if factorName is "_factor_" and the data.frame in value contains a factor column called "color" and the name is "mytable" then dbWriteFactorTable will create a table called mytable_factor_color which will store the levels information)
+#' @param \dots Options to pass along to dbWriteTable (e.g. append=TRUE)
+#' @return A boolean indicating whether the table write was successful
+dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", ... ) {
+  require(RSQLite)
+  # Test inputs
+  stopifnot(class(conn)=="SQLiteConnection")
+  stopifnot(class(name)=="character")
+  stopifnot("data.frame" %in% class(value))
+  stopifnot(class(factorName)=="character")
+  if( grepl("[.]",factorName) ) stop("factorName must use valid characters for SQLite")
+  if( "data.table" %in% class(value) ) dt <- TRUE # Is value a data.table, if so use more efficient methods
+  # Convert factors to character
+  factorCols <- names( Filter( function(x) x=="factor", vapply( value, class, "" ) ) )
+  if(length(factorCols>0)) {
+    for( cl in which( colnames(value) %in% factorCols ) ) {
+      cn <- colnames(value)[cl]
+      factorTable <- data.frame( levels=levels(value[[ cn ]]) )
+      factorTable$levelKey <- seq(nrow(factorTable))
+      fctNm <- paste0(name,factorName,cn)
+      dbWriteTable( conn = conn, name = fctNm, value = factorTable, row.names=FALSE, overwrite=TRUE )
+      if( dt )  set( x=value, j=cl, value=as.character(value[[ cn ]]) )
+    }
+    if( !dt )  value <- japply( value, which( colnames(value) %in% factorCols ), as.character )
+  } else {
+    warning("No factor columns detected.")
+  }
+  dbWriteTable( conn = conn, name = name, value = value, ... )
+}
+
+#' Read a table via RSQLite with factors stored in another table
+#' @param conn The connection object (created with e.g. dbConnect)
+#' @param name The name of the table to read
+#' @param query A character string containing sequel statements to be appended onto the query (e.g. "WHERE x==3")
+#' @param dt Whether to return a data.table vs. a plain-old data.frame
+#' @param factorName The base name of the tables to store the factor labels in in the SQLite database (e.g. if factorName is "_factor_" and the data.frame in value contains a factor column called "color" and the name is "mytable" then dbWriteFactorTable will expect there to be a table called mytable_factor_color which holds the levels information)
+#' @param \dots Options to pass along to dbGetQuery
+#' @return A data.table or data.frame
+dbReadFactorTable <- function( conn, name, query="", dt=TRUE, factorName="_factor_", ... ) {
+  require(RSQLite)
+  # Test inputs
+  stopifnot(class(conn)=="SQLiteConnection")
+  stopifnot(class(name)=="character")
+  stopifnot(class(factorName)=="character")
+  if( grepl("[.]",factorName) ) stop("factorName must use valid characters for SQLite")
+  # Read main table
+  if( dt ) {
+    value <- as.data.table( dbGetQuery( conn, paste("SELECT * FROM",name,query), ... ) )
+  } else {
+    value <- dbGetQuery( conn, paste("SELECT * FROM",name,query), ... )
+  }
+  # Convert factors to character
+  factorCols <- sub( paste0("^.*",name,factorName,"(.+)$"), "\\1", 
+                     Filter( Negate(is.na), 
+                             str_extract( dbListTables( conn ), paste0(".*",name,factorName,".*") ) 
+                     )
+  )
+  if(length(factorCols>0)) {
+    for( cn in factorCols ) {
+      fctNm <- paste0(name,factorName,cn)
+      factorTable <- dbGetQuery( conn, paste0("SELECT * FROM ",fctNm) )
+      if( dt ) {
+        cl <- which( colnames(value) %in% cn )
+        set( x=value, j=cl, value=factor( value[[ cn ]], levels=factorTable$levels ) )
+      } else {
+        value[[ cn ]] <- factor( value[[ cn ]], levels=factorTable$levels )
+      }
+    }
+  } else {
+    warning("No factor columns detected.")
+  }
+  value
 }

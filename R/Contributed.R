@@ -59,7 +59,7 @@ sort.data.frame <- function(x, decreasing = NULL, formula, ...) {
 		dat=formula
 		formula=f
 	}
-	if(formula[[1]] != "~") {
+	if(!isOneSided(formula)) {
 		stop("Formula must be one-sided.")
 	}
 	# Make the formula into character and remove spaces
@@ -208,7 +208,7 @@ xtablelm <- function(lm.object, titref, labname, extracaption=NULL){
 #'@param \dots Additional arguments to \code{FUN}.
 #'@return A list of the same length as there are factor levels in \code{INDEX}.
 #'@note Simplification sensu \code{tapply} is not yet implemented.
-#'@author Roman Lustrik \email{roman.lustrik@@gmail.com}
+#'@author Roman Lustrik \email{roman.lustrik@biolitika.si}
 #'@seealso \code{\link{tapply}}, \code{\link{by}}, \code{\link{aggregate}},
 #'\code{\link{apply}}, \code{\link{split}}
 #'@keywords manip
