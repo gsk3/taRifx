@@ -1549,15 +1549,36 @@ tab <- function( ..., exclude = NULL, useNA = c("no", "ifany", "always"), dnn = 
 }
 
 
+
+# -------------------------- #
+#    Extensions for RSQLite
+# -------------------------- #
+
+#' Function to return column names from a SQLite database
+#' @param conn An RSQLite connection to a database
+#' @param tableName Character string giving the name of the table you want column names for
+#' @return Character vector of column names
+dbGetColnames <- function(conn, tableName) {
+  x <- dbGetQuery( conn, paste0("SELECT sql FROM sqlite_master WHERE tbl_name = '",tableName,"' AND type = 'table'") )[1,1]
+  x <- str_split(x,"\\n")[[1]][-1]
+  x <- sub("[()]","",x)
+  res <- gsub( '"',"",str_extract( x[1], '".+"' ) )
+  x <- x[-1]
+  x <- x[-length(x)]
+  res <- c( res, gsub( "\\t", "", str_extract( x, "\\t[0-9a-zA-Z_]+" ) ) )
+  res
+}
+
 #' Write a table via RSQLite with factors stored in another table
 #' Handles data.tables efficiently for large datasets
 #' @param conn The connection object (created with e.g. dbConnect)
 #' @param name The name of the table to write
 #' @param value The data.frame to write to the database
 #' @param factorName The base name of the tables to store the factor labels in in the SQLite database (e.g. if factorName is "_factor_" and the data.frame in value contains a factor column called "color" and the name is "mytable" then dbWriteFactorTable will create a table called mytable_factor_color which will store the levels information)
+#' @param append a logical specifying whether to append to an existing table in the DBMS.
 #' @param \dots Options to pass along to dbWriteTable (e.g. append=TRUE)
 #' @return A boolean indicating whether the table write was successful
-dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", ... ) {
+dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", append=FALSE, ... ) {
   require(RSQLite)
   # Test inputs
   stopifnot(class(conn)=="SQLiteConnection")
@@ -1581,7 +1602,32 @@ dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", ... ) 
   } else {
     warning("No factor columns detected.")
   }
-  dbWriteTable( conn = conn, name = name, value = value, ... )
+  # If we're appending, check that the number of columns of the new table is equal to the number of columns of the old table
+  if(append) {
+    # Write our database to a temporary table
+    tempTableName <- "temp_dbWriteFactorTable"
+    if(dbExistsTable(db,tempTableName))  dbRemoveTable(db,tempTableName)
+    dbWriteTable( conn = conn, name=tempTableName, value = value, row.names=FALSE, append=FALSE  )
+    # Merge the temporary table with the target SQLite table
+    sqlColnames <- dbGetColnames( db, name )
+    dfColnames <- sqlColnames
+    dfColnames[ !sqlColnames %in% colnames(testDat2) ] <- "null"
+    status <- dbSendQuery( db, 
+     paste( 
+       "INSERT INTO", name, 
+       "(",paste(sqlColnames,collapse=","),")",
+       "SELECT",
+       paste( dfColnames, collapse="," ),
+       "FROM",
+       tempTableName
+     )
+    )
+    # Remove temporary table
+    dbRemoveTable(db,tempTableName)
+  } else {
+    status <- dbWriteTable( conn = conn, name = name, value = value, append=append, ... )
+  }
+  return( status )
 }
 
 #' Read a table via RSQLite with factors stored in another table
