@@ -6,6 +6,7 @@
 #' Function to return column names from a SQLite database
 #' @param conn An RSQLite connection to a database
 #' @param name Character string giving the name of the table you want column names for
+#' @export dbGetColnames
 #' @return Character vector of column names
 dbGetColnames <- function(conn, name) {
   x <- dbGetQuery( conn, paste0("SELECT sql FROM sqlite_master WHERE tbl_name = '",name,"' AND type = 'table'") )[1,1]
@@ -25,6 +26,7 @@ dbGetColnames <- function(conn, name) {
 #' @param append a logical specifying whether to append to an existing table in the DBMS.
 #' @param \dots Options to pass along to dbWriteTable (e.g. append=TRUE)
 #' @return A boolean indicating whether the table write was successful
+#' @export dbWriteFactorTable
 #' @examples
 #' library(RSQLite)
 #' load_all( file.path(.db,"R-projects","taRifx") )
@@ -156,6 +158,7 @@ dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", append
 #' @param factorName The base name of the tables to store the factor labels in in the SQLite database (e.g. if factorName is "_factor_" and the data.frame in value contains a factor column called "color" and the name is "mytable" then dbWriteFactorTable will expect there to be a table called mytable_factor_color which holds the levels information)
 #' @param \dots Options to pass along to dbGetQuery
 #' @return A data.table or data.frame
+#' @export dbReadFactorTable
 dbReadFactorTable <- function( conn, name, query="", dt=TRUE, factorName="_factor_", ... ) {
   require(RSQLite)
   # Test inputs

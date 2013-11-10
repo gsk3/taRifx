@@ -1484,6 +1484,7 @@ merge.list <- function( x, y, ... ) {
 #' This is particularly useful in combination with read.dta et al.
 #' @param dat A data.frame with attr `var.labels` giving descriptions of variables
 #' @param expr An expression to evaluate with pretty var.labels
+#' @export prettify
 #' @return The result of the expression, with variable names replaced with their labels
 #' @examples
 #' testDF <- data.frame( a=seq(10),b=runif(10),c=rnorm(10) )
@@ -1545,6 +1546,7 @@ sides.formula <- function(x,...) {
 #' @param useNA whether to include NA values in the table. See ‘Details’.
 #' @param dnn the names to be given to the dimensions in the result (the dimnames names).
 #' @param deparse.level controls how the default dnn is constructed. See ‘Details’.
+#' @export tab
 #' @return tab() returns a contingency table, an object of class "table", an array of integer values
 #' @seealso table
 tab <- function( ..., exclude = NULL, useNA = c("no", "ifany", "always"), dnn = list.names(...), deparse.level = 1 ) {

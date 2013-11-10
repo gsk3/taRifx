@@ -17,10 +17,14 @@ Suggests:
     pspline,
     grid,
     ggplot2,
-    gdata
+    gdata,
+    RSQLite,
+    data.table,
+    stringr
 Depends:
     plyr,
     reshape2
 Collate:
     'Contributed.R'
     'Rfunctions.R'
+    'RSQLiteAddons.R'
