@@ -203,19 +203,20 @@ dbReadFactorTable <- function( conn, name, query="", dt=TRUE, factorName="_facto
                              str_extract( dbListTables( conn ), paste0(".*",name,factorName,".*") ) 
                      )
   )
-  if(length(factorCols>0)) {
+  if( length(factorCols>0) ) {
     for( cn in factorCols ) {
       fctNm <- paste0(name,factorName,cn)
       factorTable <- dbGetQuery( conn, paste0("SELECT * FROM ",fctNm) )
+      factorLevels <- factorTable$levels[ order( factorTable$levelKey ) ] # sort by levelKey so we maintain a consistent reference category (SQL databases don't guarantee the row order remains the same)
       if( dt ) {
         cl <- which( colnames(value) %in% cn )
-        set( x=value, j=cl, value=factor( value[[ cn ]], levels=factorTable$levels ) )
+        set( x=value, j=cl, value=factor( value[[ cn ]], levels=factorLevels ) )
       } else {
-        value[[ cn ]] <- factor( value[[ cn ]], levels=factorTable$levels )
+        value[[ cn ]] <- factor( value[[ cn ]], levels=factorLevels )
       }
     }
   } else {
-    warning("No factor columns detected.")
+    #warning("No factor columns detected.")
   }
   value
 }
