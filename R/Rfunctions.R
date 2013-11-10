@@ -1556,17 +1556,15 @@ tab <- function( ..., exclude = NULL, useNA = c("no", "ifany", "always"), dnn = 
 
 #' Function to return column names from a SQLite database
 #' @param conn An RSQLite connection to a database
-#' @param tableName Character string giving the name of the table you want column names for
+#' @param name Character string giving the name of the table you want column names for
 #' @return Character vector of column names
-dbGetColnames <- function(conn, tableName) {
-  x <- dbGetQuery( conn, paste0("SELECT sql FROM sqlite_master WHERE tbl_name = '",tableName,"' AND type = 'table'") )[1,1]
-  x <- str_split(x,"\\n")[[1]][-1]
-  x <- sub("[()]","",x)
-  res <- gsub( '"',"",str_extract( x[1], '".+"' ) )
-  x <- x[-1]
-  x <- x[-length(x)]
-  res <- c( res, gsub( "\\t", "", str_extract( x, "\\t[0-9a-zA-Z_]+" ) ) )
-  res
+dbGetColnames <- function(conn, name) {
+  x <- dbGetQuery( conn, paste0("SELECT sql FROM sqlite_master WHERE tbl_name = '",name,"' AND type = 'table'") )[1,1]
+  x <- sub( "^.*\\((.+)\\).*$", "\\1", x )
+  x <- str_split(x,",")[[1]]
+  x <- gsub('[\t\n"]','', x)
+  x <- gsub('^ *','', x)
+  vapply( str_split( x ," " ), first, "" )
 }
 
 #' Write a table via RSQLite with factors stored in another table
@@ -1600,31 +1598,52 @@ dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", append
     }
     if( !dt )  value <- japply( value, which( colnames(value) %in% factorCols ), as.character )
   } else {
-    warning("No factor columns detected.")
+    #warning("No factor columns detected.")
   }
-  # If we're appending, check that the number of columns of the new table is equal to the number of columns of the old table
-  if(append) {
-    # Write our database to a temporary table
-    tempTableName <- "temp_dbWriteFactorTable"
-    if(dbExistsTable(db,tempTableName))  dbRemoveTable(db,tempTableName)
-    dbWriteTable( conn = conn, name=tempTableName, value = value, row.names=FALSE, append=FALSE  )
-    # Merge the temporary table with the target SQLite table
-    sqlColnames <- dbGetColnames( db, name )
-    dfColnames <- sqlColnames
-    dfColnames[ !sqlColnames %in% colnames(testDat2) ] <- "null"
-    status <- dbSendQuery( db, 
-     paste( 
-       "INSERT INTO", name, 
-       "(",paste(sqlColnames,collapse=","),")",
-       "SELECT",
-       paste( dfColnames, collapse="," ),
-       "FROM",
-       tempTableName
-     )
-    )
-    # Remove temporary table
-    dbRemoveTable(db,tempTableName)
-  } else {
+  if( append ) {
+    # If we're appending, check that the number of columns of the new table is equal to the number of columns of the old table
+      # Only run this code if we're appending, because otherwise the table won't exist
+    sqlColnames <- dbGetColnames( conn, name )
+    colnamesSubset <- !all( sqlColnames %in% colnames(value) )
+    colnamesSuperset <- !all( colnames(value) %in% sqlColnames )
+    if( colnamesSuperset ) {
+      addCols <- colnames(value)[ !colnames(value) %in% sqlColnames ]
+      for( ac in addCols ) {
+        dbSendQuery( conn,
+          paste(
+            "ALTER TABLE",
+            name,
+            "ADD COLUMN",
+            ac,
+            "DEFAULT NULL"
+          )
+        )
+      }
+    } # If it's a superset but not a subset, then we're done (allow it to return back to the second if where it just writes value directly)
+    if( colnamesSubset ) {
+      # Write our database to a temporary table
+      tempTableName <- "temp_dbWriteFactorTable"
+      if(dbExistsTable(conn,tempTableName))  dbRemoveTable(conn,tempTableName)
+      dbWriteTable( conn = conn, name=tempTableName, value = value, row.names=FALSE, append=FALSE  )
+      # Add any columns to input data.frame that are in target table, then merge
+      sqlColnames <- dbGetColnames( conn, name ) # Reset these now that we've possibly tinkered with them in the superset section
+      dfColnames <- sqlColnames
+      dfColnames[ !sqlColnames %in% colnames(testDat2) ] <- "null"
+      status <- dbSendQuery( conn, 
+       paste( 
+         "INSERT INTO", name, 
+         "(",paste(sqlColnames,collapse=","),")",
+         "SELECT",
+         paste( dfColnames, collapse="," ),
+         "FROM",
+         tempTableName
+       )
+      )
+      # Remove temporary table
+      dbRemoveTable(conn,tempTableName)
+    }
+  } 
+  if( !append || (append & !colnamesSubset) ) { # Either we're not appending, or the columns in the input and target tables exactly match (possibly after we added columns with the superset code)
     status <- dbWriteTable( conn = conn, name = name, value = value, append=append, ... )
   }
   return( status )
