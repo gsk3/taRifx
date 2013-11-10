@@ -50,8 +50,12 @@ dbGetColnames <- function(conn, name) {
 #' # Test factor conversion
 #' testDat <- data.frame(key=seq(n), x=runif(n),y=runif(n),g1=sample(letters[1:10],n,replace=TRUE),g2=rep(letters[1:10],each=n/10),g3=factor( sample(letters[1:10],n,replace=TRUE) ))
 #' if(dbExistsTable(db,"test")) dbRemoveTable(db,"test")
+#' if(dbExistsTable(db,"test_factor_g3")) dbRemoveTable(db,"test_factor_g3")
 #' dbWriteFactorTable( conn = db, name = "test", value = testDat, row.names=FALSE )
 #' dbGetQuery(db, "SELECT * FROM test")
+#' dbGetQuery(db, "SELECT * FROM test_factor_g3")
+#' testDat$g3 <- factor( sample(letters[6:15],n,replace=TRUE) )
+#' dbWriteFactorTable( conn = db, name = "test", value = testDat, row.names=FALSE, append=TRUE )
 #' dbGetQuery(db, "SELECT * FROM test_factor_g3")
 #' if(dbExistsTable(db,"test")) dbRemoveTable(db,"test")
 #' dbWriteFactorTable( conn = db, name = "test", value = as.data.table(testDat), row.names=FALSE )
@@ -93,7 +97,28 @@ dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", append
       factorTable <- data.frame( levels=levels(value[[ cn ]]) )
       factorTable$levelKey <- seq(nrow(factorTable))
       fctNm <- paste0(name,factorName,cn)
-      dbWriteTable( conn = conn, name = fctNm, value = factorTable, row.names=FALSE, overwrite=TRUE )
+      fctTableExists <- dbExistsTable(db,fctNm)
+      # Write out the factor table
+      if( append & fctTableExists ) {
+        oldFactorTable <- dbGetQuery( conn=conn, paste("SELECT levelKey, levels FROM",fctNm) )
+        levelExists <- factorTable$levels %in% oldFactorTable$levels
+        if(!all(levelExists)) {
+          startLevelKey <- max( oldFactorTable$levelKey ) + 1
+          addLevels <- factorTable$levels[!levelExists]
+          newFactorTable <- data.frame( 
+            levels = addLevels,
+            levelKey = seq( startLevelKey, startLevelKey + length(addLevels) - 1 )
+          )
+          dbWriteTable( conn = conn, name = fctNm, value = newFactorTable, row.names = FALSE, append = TRUE )
+        } # If all levels exist, don't update the table -- go straight to converting the factor to character
+      } else {
+        if(fctTableExists) {
+          warning(paste("Append set to FALSE but the factor table named",fctNm,"exists. Deleting."))
+          dbRemoveTable( conn=conn, name = fctNm )
+        }
+        dbWriteTable( conn = conn, name = fctNm, value = factorTable, row.names = FALSE )
+      }
+      # Convert variable cl to character in the main data.frame (value) that we'll write to the main SQL table
       if( dt )  set( x=value, j=cl, value=as.character(value[[ cn ]]) )
     }
     if( !dt )  value <- japply( value, which( colnames(value) %in% factorCols ), as.character )
