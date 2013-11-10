@@ -1576,6 +1576,51 @@ dbGetColnames <- function(conn, name) {
 #' @param append a logical specifying whether to append to an existing table in the DBMS.
 #' @param \dots Options to pass along to dbWriteTable (e.g. append=TRUE)
 #' @return A boolean indicating whether the table write was successful
+#' @examples
+#' library(RSQLite)
+#' load_all( file.path(.db,"R-projects","taRifx") )
+# Create
+#' db <- dbConnect( SQLite(), dbname="~/temp/test.sqlite" )
+# Write test
+#' set.seed(1)
+#' n <- 1000
+#' testDat <- data.frame(key=seq(n), x=runif(n),y=runif(n),g1=sample(letters[1:10],n,replace=TRUE),g2=rep(letters[1:10],each=n/10),g3=factor( sample(letters[1:10],n,replace=TRUE) ))
+#' if(dbExistsTable(db,"test")) dbRemoveTable(db,"test")
+#' dbWriteTable( conn = db, name = "test", value = testDat, row.names=FALSE )
+#' testDat2 <- data.frame( key=seq(n+1,n+100), x=runif(100) )
+#' dbWriteTable( conn = db, name="test", value = testDat2, row.names=FALSE, append=TRUE  )
+# Read test
+#' testRecovery <- dbGetQuery(db, "SELECT * FROM test")
+#' testSelection <- dbGetQuery(db, "SELECT * FROM test WHERE g3=='h' OR g3=='e' ")
+#' testSelection
+# Test removing rows matching criteria
+#' for(i in 1:10) dbWriteTable( conn = db, name = "test", value = testDat, row.names=FALSE, append=TRUE )
+#' dbSendQuery( db, "DELETE FROM test WHERE g3=='a'" )
+#' # Test factor conversion
+#' testDat <- data.frame(key=seq(n), x=runif(n),y=runif(n),g1=sample(letters[1:10],n,replace=TRUE),g2=rep(letters[1:10],each=n/10),g3=factor( sample(letters[1:10],n,replace=TRUE) ))
+#' if(dbExistsTable(db,"test")) dbRemoveTable(db,"test")
+#' dbWriteFactorTable( conn = db, name = "test", value = testDat, row.names=FALSE )
+#' dbGetQuery(db, "SELECT * FROM test")
+#' dbGetQuery(db, "SELECT * FROM test_factor_g3")
+#' if(dbExistsTable(db,"test")) dbRemoveTable(db,"test")
+#' dbWriteFactorTable( conn = db, name = "test", value = as.data.table(testDat), row.names=FALSE )
+#' dbReadFactorTable( conn = db, name = "test" )
+#' dbReadFactorTable( conn = db, name = "test", query="WHERE g3=='a'" )
+#' # -- Test merging of tables where the columns don't line up -- #
+#' set.seed(1)
+#' n <- 1000
+#' testDat <- data.frame(key=seq(n), x=runif(n),y=runif(n),g1=sample(letters[1:10],n,replace=TRUE),g2=rep(letters[1:10],each=n/10),g3=factor( sample(letters[1:10],n,replace=TRUE) ))
+#' if(dbExistsTable(db,"test")) dbRemoveTable(db,"test")
+#' dbWriteFactorTable( conn = db, name = "test", value = testDat, row.names=FALSE )
+#' dbGetQuery( db, "SELECT * FROM test" )
+#' # Add a table with columns that are a subset of the SQL table
+#' testDat2 <- data.frame( key=seq(n+1,n+100), y=runif(100) )
+#' dbWriteFactorTable( conn = db, name="test", value = testDat2, row.names=FALSE, append=TRUE  )
+#' dbGetQuery( db, "SELECT * FROM test" )
+#' # Add a table where the columns are a superset of the SQL table's
+#' testDat3 <- data.frame( key=seq(n+101,n+200), x=runif(100), n=runif(100) )
+#' dbWriteFactorTable( conn = db, name="test", value = testDat3, row.names=FALSE, append=TRUE  )
+#' dbGetQuery( db, "SELECT * FROM test" )
 dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", append=FALSE, ... ) {
   require(RSQLite)
   # Test inputs
