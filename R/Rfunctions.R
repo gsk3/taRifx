@@ -1504,6 +1504,7 @@ unfactor.data.frame <- function(x) {
 }
 
 #' Figure out how many "sides" a formula has
+#' See also SimonO101's answer at http://stackoverflow.com/a/16376939/636656
 #' @aliases sides sides.default sides.formula
 #' @param x The object to calculate the sidedness of
 #' @param \dots Other items to pass along
@@ -1511,7 +1512,7 @@ unfactor.data.frame <- function(x) {
 #' @export sides sides.default sides.formula
 #' @rdname sides
 #' @examples
-#' test <- list( ~ a + b, a ~ b + c, b + c ~ a, ~ a ~ b, a ~ b ~ c )
+#' test <- list( ~ a + b, a ~ b + c, b + c ~ a, ~ a ~ b, a ~ b ~ c, a~b+c|d~c~d~e~f~g )
 #' sapply(test,sides)
 sides <- function(x,...) {
   UseMethod("sides",x)
@@ -1527,11 +1528,13 @@ sides.default <- function(x,...) {
 #' @rdname sides
 sides.formula <- function(x,...) {
   isOneSided <- function(x) attr( terms(x) , "response" ) == 0
+  if(isOneSided(x)) return(1)
   two <- function(x) x[[2]]
   # Recursively navigate the formula tree, keeping track of how many times it's been done
-  sds <- function(f,cnt=0) {
+  sds <- function(f,cnt) {
     if(class(two(f))=="call") sds(two(f),cnt=cnt+1) else return(cnt)
   }
+  sds(x,2)
 }
 
 

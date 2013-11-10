@@ -59,7 +59,7 @@ sort.data.frame <- function(x, decreasing = NULL, formula, ...) {
 		dat=formula
 		formula=f
 	}
-	if(!isOneSided(formula)) {
+	if(sides(formula)!=1) {
 		stop("Formula must be one-sided.")
 	}
 	# Make the formula into character and remove spaces
