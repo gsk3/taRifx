@@ -1584,7 +1584,11 @@ dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", append
   stopifnot("data.frame" %in% class(value))
   stopifnot(class(factorName)=="character")
   if( grepl("[.]",factorName) ) stop("factorName must use valid characters for SQLite")
-  if( "data.table" %in% class(value) ) dt <- TRUE # Is value a data.table, if so use more efficient methods
+  if( "data.table" %in% class(value) )  {
+    dt <- TRUE # Is value a data.table, if so use more efficient methods
+  } else {
+    dt <- FALSE
+  }
   # Convert factors to character
   factorCols <- names( Filter( function(x) x=="factor", vapply( value, class, "" ) ) )
   if(length(factorCols>0)) {
@@ -1609,6 +1613,7 @@ dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", append
     if( colnamesSuperset ) {
       addCols <- colnames(value)[ !colnames(value) %in% sqlColnames ]
       for( ac in addCols ) {
+        warning(paste("Adding column",ac,"to SQL table"))
         dbSendQuery( conn,
           paste(
             "ALTER TABLE",
@@ -1628,7 +1633,7 @@ dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", append
       # Add any columns to input data.frame that are in target table, then merge
       sqlColnames <- dbGetColnames( conn, name ) # Reset these now that we've possibly tinkered with them in the superset section
       dfColnames <- sqlColnames
-      dfColnames[ !sqlColnames %in% colnames(testDat2) ] <- "null"
+      dfColnames[ !sqlColnames %in% colnames(value) ] <- "null"
       status <- dbSendQuery( conn, 
        paste( 
          "INSERT INTO", name, 
