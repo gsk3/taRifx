@@ -833,9 +833,9 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 			if(show.outlines) {grid.rect() }
 			# - graph areas for GP2 - #
 			seekViewport(paste("gp1.",gp1.i,sep=""))
-			pushViewport(viewport(layout.pos.col=gp2.i,layout.pos.row=1, name=paste("gp1.",gp1.i,"_gp2.",gp2.i,sep=""), yscale=unit(x.range,"native") ))
+			pushViewport(viewport(layout.pos.col=gp2.i,layout.pos.row=1, name=paste("gp1.",gp1.i,"_gp2.",gp2.i,sep=""), yscale=x.range ))
 			if(show.outlines) {grid.rect() }
-			#pushViewport(viewport(angle=-90,width=convertUnit(unit(1,"npc"),"npc","y","dimension","x","dimension"),height=convertUnit(unit(1,"npc"),"npc","x","dimension","y","dimension"),xscale=unit(x.range,"native"),yscale=unit(y.range.scaled,"native") ))
+			#pushViewport(viewport(angle=-90,width=convertUnit(unit(1,"npc"),"npc","y","dimension","x","dimension"),height=convertUnit(unit(1,"npc"),"npc","x","dimension","y","dimension"),xscale=x.range,yscale=y.range.scaled ))
 			for(gp3.i in seq(num.gp3)) {
 				# - Create our subsetted (GP3) data gp3.n times on the same gp2 plot viewport - #
 				x.gp1gp2gp3 <- subset(x,as.numeric(gp[[1]])==gp1.i & as.numeric(gp[[2]])==gp2.i & as.numeric(gp[[3]])==gp3.i)	
@@ -851,38 +851,38 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 						# Min/max line (actually goes to 1.5IQR past Q1 or Q3)
 						min.reduced = max(quantiles["25%"]-1.5*iqr,min(x.gp1gp2gp3)) # Use true min if 1.5*iqr exceeds it
 						max.reduced = min(quantiles["75%"]+1.5*iqr,max(x.gp1gp2gp3)) # Use true max if 1.5*iqr exceeds it
-						grid.lines(y=unit(c(min.reduced,quantiles["25%"]),"native"),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Min line
-						grid.lines(y=unit(c(max.reduced,quantiles["75%"]),"native"),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Max line						
+						grid.lines(y=c(min.reduced,quantiles["25%"]),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Min line
+						grid.lines(y=c(max.reduced,quantiles["75%"]),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Max line						
 						if(box.show.whiskers==TRUE) { # Draw "whiskers" on the min/max
-							grid.lines(y=unit(min.reduced,"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Min whisker
-							grid.lines(y=unit(max.reduced,"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Max whisker
+							grid.lines(y=min.reduced,x=loc.y+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Min whisker
+							grid.lines(y=max.reduced,x=loc.y+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i])) # Max whisker
 						}
 						# Q1-Q3 line, shifted just slightly
 						if(box.show.mean==FALSE) { # Only show if we're not cluttering it up with the mean/SD diamond already
 							# Vertical line
-							grid.lines(y=unit(quantiles[c("25%","75%")],"native"),x=unit(loc.y,"native")-box.width.tiny,default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+							grid.lines(y=quantiles[c("25%","75%")],x=loc.y-box.width.tiny,default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 							if(box.show.box==TRUE) { # Show the right side of the box also, if specified
-								grid.lines(y=unit(quantiles[c("25%","75%")],"native"),x=unit(loc.y,"native")+box.width.tiny,default.units="native",gp=gpar(col=colors.plot[gp3.i]))
-								grid.lines(y=unit(quantiles["25%"],"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
-								grid.lines(y=unit(quantiles["75%"],"native"),x=unit(loc.y,"native")+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=quantiles[c("25%","75%")],x=loc.y+box.width.tiny,default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=quantiles["25%"],x=loc.y+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=quantiles["75%"],x=loc.y+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 							} else {
 								# Small horizontal lines to connect it in -- draw only the one to the left half if we're not drawing the full box
-								grid.lines(y=unit(quantiles["25%"],"native"),x=unit(loc.y,"native")+(c(0,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
-								grid.lines(y=unit(quantiles["75%"],"native"),x=unit(loc.y,"native")+(c(0,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=quantiles["25%"],x=loc.y+(c(0,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+								grid.lines(y=quantiles["75%"],x=loc.y+(c(0,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 							}
 						}
 						# Outliers as points
 						outliers=subset(x.gp1gp2gp3,x.gp1gp2gp3<min.reduced | x.gp1gp2gp3>max.reduced )
 						if(length(outliers)>0) {
-							grid.points(y=unit(outliers,"native"),x=rep(loc.y,length(outliers)),default.units="native",gp=gpar(col=colors.plot[gp3.i],cex=.2),pch=4 )
+							grid.points(y=outliers,x=rep(loc.y,length(outliers)),default.units="native",gp=gpar(col=colors.plot[gp3.i],cex=.2),pch=4 )
 						}
 						# Quartiles 1 and 3
 						if(box.show.mean==TRUE) {
-							grid.lines(y=unit(rep(quantiles[c("25%")],2),"native"),x=c(loc.y-box.width.small,loc.y+box.width.small),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
-							grid.lines(y=unit(rep(quantiles[c("75%")],2),"native"),x=c(loc.y-box.width.small,loc.y+box.width.small),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+							grid.lines(y=rep(quantiles[c("25%")],2),x=c(loc.y-box.width.small,loc.y+box.width.small),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+							grid.lines(y=rep(quantiles[c("75%")],2),x=c(loc.y-box.width.small,loc.y+box.width.small),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 						}
 						# Median
-						grid.points(y=unit(median(x.gp1gp2gp3),"native"),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i],cex=.3),pch=15)
+						grid.points(y=median(x.gp1gp2gp3),x=loc.y,default.units="native",gp=gpar(col=colors.plot[gp3.i],cex=.3),pch=15)
 						# Mean (+/- SD)
 						if(box.show.mean==TRUE) {
 							meanlines.x = c(mean(x.gp1gp2gp3),mean(x.gp1gp2gp3)-sd(x.gp1gp2gp3),mean(x.gp1gp2gp3),mean(x.gp1gp2gp3)+sd(x.gp1gp2gp3),mean(x.gp1gp2gp3) ) # start at the mean on the left and loop around
@@ -901,7 +901,7 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 
 	# - Draw in axis - #
 	seekViewport("Axis")
-	pushViewport(viewport(layout.pos.col=1,layout.pos.row=3,name="Axis.actual",yscale=unit(x.range,"native") ))
+	pushViewport(viewport(layout.pos.col=1,layout.pos.row=3,name="Axis.actual",yscale=x.range ))
 	if(show.outlines) {grid.rect()}
 	if(show.outlines) {grid.rect() }
 	# Major axis tick marks
