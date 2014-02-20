@@ -813,6 +813,7 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 	y.range.scaled <- y.range + c(diff(y.range)*(1-y.scale)/2,-diff(y.range)*(1-y.scale)/2) # Scale our range in ways that avoid distortion around 0
 	
 	# - Divide into num.gp1 graph sections - #
+	makeNat <- function(x) as.numeric(convertUnit(x,"native")) # Function to convert to native scale then drop units (see Paul Murrell's issue suggestion in Github)
 	for(gp1.i in seq(num.gp1)) {
 		# - Title areas for gp1 - #
 		seekViewport("Graphs")
@@ -845,7 +846,7 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 						loc.y = y.range.scaled[1]+(gp3.i-.5)*(1/num.gp3)*diff(y.range.scaled) # y coordinate just shifts based on how many things we're plotting in this viewport
 						quantiles = quantile(x.gp1gp2gp3)
 						iqr = diff(quantiles[c("25%","75%")])
-						box.width.tiny = unit(1,"points")
+						box.width.tiny = makeNat(unit(1,"points"))
 						box.width.small = box.width.small.scale*(1/num.gp3)*diff(y.range.scaled)
 						box.width.large = box.width.large.scale*(1/num.gp3)*diff(y.range.scaled)
 						# Min/max line (actually goes to 1.5IQR past Q1 or Q3)
@@ -860,7 +861,7 @@ compareplot <- function(formula, data.frame, show.outlines=FALSE,main="",x.label
 						# Q1-Q3 line, shifted just slightly
 						if(box.show.mean==FALSE) { # Only show if we're not cluttering it up with the mean/SD diamond already
 							# Vertical line
-							grid.lines(y=quantiles[c("25%","75%")],x=loc.y-box.width.tiny,default.units="native",gp=gpar(col=colors.plot[gp3.i]))
+							grid.lines(y=quantiles[c("25%","75%")],x=loc.y-(box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 							if(box.show.box==TRUE) { # Show the right side of the box also, if specified
 								grid.lines(y=quantiles[c("25%","75%")],x=loc.y+box.width.tiny,default.units="native",gp=gpar(col=colors.plot[gp3.i]))
 								grid.lines(y=quantiles["25%"],x=loc.y+(c(1,-1)*box.width.tiny),default.units="native",gp=gpar(col=colors.plot[gp3.i]))
