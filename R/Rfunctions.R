@@ -1062,7 +1062,6 @@ xtable.summary.lme <- function (x, caption = NULL, label = NULL, align = NULL, d
 }
 
 #'Add in methods to handle CrossTable objects in xtable
-#'
 #'@aliases xtable.CrossTable
 #'@param x Model object
 #'@param caption Caption for table
@@ -1070,15 +1069,13 @@ xtable.summary.lme <- function (x, caption = NULL, label = NULL, align = NULL, d
 #'@param align See ?xtable
 #'@param digits See ?xtable
 #'@param display See ?xtable
+#'@param beta.names See ?xtable
 #'@param \dots Arguments to pass to xtable
 #'@return xtable object
+#'@method xtable CrossTable
 #'@export xtable.CrossTable
 #'@seealso \code{\link[xtable]{xtable}}
-xtable.CrossTable <- function (
-  x, 
-  caption = NULL, label = NULL, align = NULL, digits = NULL, display = NULL, 
-  
-  ...) {
+xtable.CrossTable <- function ( x, caption = NULL, label = NULL, align = NULL, digits = NULL, display = NULL, beta.names = NULL, ... ) {
   require(xtable)
   # Grab our data
   x <- data.frame(x$tTable[,-3], check.names = FALSE)
@@ -1545,13 +1542,13 @@ sides.formula <- function(x,...) {
 #' @param \dots one or more objects which can be interpreted as factors (including character strings), or a list (or data frame) whose components can be so interpreted. (For as.table and as.data.frame, arguments passed to specific methods.)
 #' @param exclude levels to remove for all factors in .... If set to NULL, it implies useNA = "always". See ‘Details’ for its interpretation for non-factor arguments.
 #' @param useNA whether to include NA values in the table. See ‘Details’.
-#' @param dnn the names to be given to the dimensions in the result (the dimnames names).
 #' @param deparse.level controls how the default dnn is constructed. See ‘Details’.
+#' @param list.names 
 #' @export tab
 #' @return tab() returns a contingency table, an object of class "table", an array of integer values
 #' @seealso table
-tab <- function( ..., exclude = NULL, useNA = c("no", "ifany", "always"), dnn = list.names(...), deparse.level = 1 ) {
-  table( ..., exclude=exclude, useNA=useNA, dnn=dnn, deparse.level=deparse.level )
+tab <- function( ..., exclude = NULL, useNA = c("no", "ifany", "always"), deparse.level = 1 ) {
+  table( ..., exclude=exclude, useNA=useNA, deparse.level=deparse.level )
 }
 
 

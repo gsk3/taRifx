@@ -31,7 +31,8 @@ dbGetColnames <- function(conn, name) {
 #' library(RSQLite)
 #' load_all( file.path(.db,"R-projects","taRifx") )
 # Create
-#' db <- dbConnect( SQLite(), dbname="~/temp/test.sqlite" )
+#' dbFilename <- tempfile()
+#' db <- dbConnect( SQLite(), dbname=dbFilename )
 # Write test
 #' set.seed(1)
 #' n <- 1000
@@ -76,6 +77,9 @@ dbGetColnames <- function(conn, name) {
 #' testDat3 <- data.frame( key=seq(n+101,n+200), x=runif(100), n=runif(100) )
 #' dbWriteFactorTable( conn = db, name="test", value = testDat3, row.names=FALSE, append=TRUE  )
 #' dbGetQuery( db, "SELECT * FROM test" )
+#' # Finish up
+#' dbDisconnect(db) # close connection
+#' unlink( dbFilename ) # delete tempfile
 dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", append=FALSE, ... ) {
   require(RSQLite)
   # Test inputs
@@ -97,10 +101,10 @@ dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", append
       factorTable <- data.frame( levels=levels(value[[ cn ]]) )
       factorTable$levelKey <- seq(nrow(factorTable))
       fctNm <- paste0(name,factorName,cn)
-      fctTableExists <- dbExistsTable(db,fctNm)
+      fctTableExists <- dbExistsTable( conn = conn , name = fctNm)
       # Write out the factor table
       if( append & fctTableExists ) {
-        oldFactorTable <- dbGetQuery( conn=conn, paste("SELECT levelKey, levels FROM",fctNm) )
+        oldFactorTable <- dbGetQuery( conn = conn, paste("SELECT levelKey, levels FROM",fctNm) )
         levelExists <- factorTable$levels %in% oldFactorTable$levels
         if(!all(levelExists)) {
           startLevelKey <- max( oldFactorTable$levelKey ) + 1
@@ -181,10 +185,11 @@ dbWriteFactorTable <- function( conn, name, value, factorName="_factor_", append
 #' @param query A character string containing sequel statements to be appended onto the query (e.g. "WHERE x==3")
 #' @param dt Whether to return a data.table vs. a plain-old data.frame
 #' @param factorName The base name of the tables to store the factor labels in in the SQLite database (e.g. if factorName is "_factor_" and the data.frame in value contains a factor column called "color" and the name is "mytable" then dbWriteFactorTable will expect there to be a table called mytable_factor_color which holds the levels information)
+#' @param select.cols A SQL statement (in the form of a character vector of length 1) giving the columns to select. E.g. "*" selects all columns, "x,y,z" selects three columns named as listed
 #' @param \dots Options to pass along to dbGetQuery
 #' @return A data.table or data.frame
 #' @export dbReadFactorTable
-dbReadFactorTable <- function( conn, name, query="", dt=TRUE, factorName="_factor_", ... ) {
+dbReadFactorTable <- function( conn, name, query="", dt=TRUE, factorName="_factor_", select.cols="*", ... ) {
   require(RSQLite)
   # Test inputs
   stopifnot(class(conn)=="SQLiteConnection")
@@ -193,9 +198,9 @@ dbReadFactorTable <- function( conn, name, query="", dt=TRUE, factorName="_facto
   if( grepl("[.]",factorName) ) stop("factorName must use valid characters for SQLite")
   # Read main table
   if( dt ) {
-    value <- as.data.table( dbGetQuery( conn, paste("SELECT * FROM",name,query), ... ) )
+    value <- as.data.table( dbGetQuery( conn, paste("SELECT",select.cols,"FROM",name,query), ... ) )
   } else {
-    value <- dbGetQuery( conn, paste("SELECT * FROM",name,query), ... )
+    value <- dbGetQuery( conn, paste("SELECT",select.cols,"FROM",name,query), ... )
   }
   # Convert factors to character
   factorCols <- sub( paste0("^.*",name,factorName,"(.+)$"), "\\1", 
@@ -203,6 +208,7 @@ dbReadFactorTable <- function( conn, name, query="", dt=TRUE, factorName="_facto
                              str_extract( dbListTables( conn ), paste0(".*",name,factorName,".*") ) 
                      )
   )
+  factorCols <- factorCols[ factorCols %in% str_split( select.cols, ", *" )[[1]] ]
   if( length(factorCols>0) ) {
     for( cn in factorCols ) {
       fctNm <- paste0(name,factorName,cn)
