@@ -1281,65 +1281,6 @@ stack.list <- function( x, label=FALSE, ... ) {
 }
 
 
-#'Function to restore Mechanical Turk output to its original state (plus the
-#'added columns)
-#'
-#'Takes Amazon Mechanical Turk output, (optionally) deduplicates it, and
-#'returns the file to the state where you uploaded it, plus the additional
-#'columns derived from Turking.
-#'
-#'@param dat A data.frame
-#'@param drop.duplicates Has three modes of operation: 1. If false, no
-#'duplicates are dropped. 2. If true or character use built-in function (drop
-#'only if all (TRUE) or the listed (character) "Answer." columns identical).
-#'3. Or can be a user-defined function that takes in a data.frame and returns a
-#'logical vector corresponding to whether to drop a row (TRUE) or not (FALSE).
-#'@param post.process A user-defined function run on the data.frame after it is
-#'cleaned
-#'@seealso adjudicateTurked
-#'@return A data.frame
-#'@export cleanTurked
-cleanTurked <- function( dat, drop.duplicates=TRUE , post.process=identity ) {
-  inputs <- colnames(dat)[ grep( "Input\\.", colnames(dat) ) ]
-  answers <- colnames(dat)[ grep( "Answer\\.", colnames(dat) ) ]
-  # Eliminate rejected
-  dat <- dat[ ! grepl("[xX]",dat$Reject), ]
-  # Deduplicate
-  if( is.logical(drop.duplicates) | is.character(drop.duplicates) ) {
-    if(is.character(drop.duplicates) || drop.duplicates ) {
-      if(is.logical(drop.duplicates)) { drop.duplicates <- answers } # if it was a logical, drop only rows where all columns were duplicates
-      all.identical.byCol <- ddply( dat[,c("HITId",answers)], .(HITId), function(x) sapply(subset(x,select=-c(HITId)), function(v) length(unique(v))==1 ) )
-      identical <- apply( all.identical.byCol[,drop.duplicates,drop=FALSE], 1, all ) # Only drop rows where all the desired columns are identical within a group
-      ident.df <- data.frame( HITId=all.identical.byCol$HITId, identical=identical )
-      dat <- ddply( merge(dat, ident.df), .(HITId), function(x) {
-        if(x$identical[1]) return(x[1,])
-        else return(x)
-      } )
-      dat <- subset(dat,select=c(-identical))
-    }
-  } else if(is.function(drop.duplicates)) { # Use the user's function
-    stop("Not yet implemented.  Please use post.process for now.\n")
-  } else { stop("drop.duplicates must be a logical or function.\n")}
-  # Eliminate all the MT-added columns
-  ret <- subset(dat, select=c(inputs,answers) )
-  colnames(ret) <- sub( "(Input|Answer)\\.", "", colnames(ret), perl=TRUE )
-  ret <- post.process(ret)
-  ret
-}
-
-#' Function to manually deduplicate Turked entries which couldn't be done automatically
-#' @param dat The data.frame from cleanTurked()
-#' @param id Character vector of the column name that uniquely identifies each input
-adjudicateTurked <- function( dat, id ) {
-  for( l in unique(dat[[id]]) ) {
-    wch <-  dat[[id]] == l
-    if( sum( wch != 0 ) ) {
-      wchColsNeq <- sapply( dat[wch,], function(x) length(unique(x))>1 )
-      cat("For id",l,"the following columns need to be resolved:\n")
-      print(dat[wch,wchColsNeq,drop=FALSE])
-    }
-  }
-}
 
 #' Outputs a sanitized CSV file for fussy input systems e.g. ArcGIS and Mechanical Turk
 #' Performs three cleansing actions: converts text to latin1 encoding, eliminates funny characters in column names, and writes a CSV without the leading row.names column
