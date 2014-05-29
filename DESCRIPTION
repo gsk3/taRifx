@@ -19,10 +19,9 @@ Suggests:
     RSQLite,
     data.table,
     stringr
-Depends:
-    plyr,
-    reshape2
+Imports:
+    reshape2,
+    plyr
 Collate:
     'Contributed.R'
     'Rfunctions.R'
-    'RSQLiteAddons.R'

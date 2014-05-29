@@ -36,3 +36,4 @@ Change log version 1.0.5 to 1.0.6
 - Added several functions (tab, etc.)
 - Fixed compareplot: https://github.com/gsk3/taRifx/issues/1
 - Fixed DESCRIPTION: https://github.com/gsk3/taRifx/issues/2
+- Removed Mechanical Turk functions to their own package "turkTools"

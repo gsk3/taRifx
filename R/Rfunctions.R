@@ -434,6 +434,7 @@ bytable = function(datavec,indices,ops=c(quote(mean)),ops.desc=list(mean="Mean")
 #'@param \dots Pass-alongs.
 #'@return A data.frame.
 #'@export as.data.frame.by
+#'@import reshape2
 #'@examples
 #'
 #'	test.by <- by( ChickWeight$weight, ChickWeight$Diet, mean)
@@ -498,7 +499,6 @@ remove.factors = function(df) {
 #'
 #'@rdname shift
 shift <- function(x,...) {
-	require(plyr)
 	UseMethod("shift",x)
 }
 #'@method shift default
@@ -535,6 +535,7 @@ shift.default <- function(x,n=1,wrap=TRUE,pad=FALSE,...) {
 #'@method shift data.frame
 #'@S3method shift data.frame
 #'@rdname shift
+#'@import plyr
 shift.data.frame <- function(x,...) {
   colwiseShift <- colwise(shift.default)
   colwiseShift(x,...)
